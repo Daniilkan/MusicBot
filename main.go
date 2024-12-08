@@ -21,22 +21,22 @@ func init() {
 func main() {
 	BOT_TOKEN, exists := os.LookupEnv("BOT_TOKEN")
 	if !exists {
-		log.Fatal("BOT_TOKEN not found in environment variables")
+		log.Printf("BOT_TOKEN not found in environment variables")
 	}
 
 	bot, err := telego.NewBot(BOT_TOKEN, telego.WithDefaultDebugLogger())
 	if err != nil {
-		log.Fatalf("Error creating bot: %v", err)
+		log.Printf("Error creating bot: %v", err)
 	}
 
 	updates, err := bot.UpdatesViaLongPolling(nil)
 	if err != nil {
-		log.Fatalf("Error getting updates: %v", err)
+		log.Printf("Error getting updates: %v", err)
 	}
 
 	bh, err := th.NewBotHandler(bot, updates)
 	if err != nil {
-		log.Fatalf("Error creating bot handler: %v", err)
+		log.Printf("Error creating bot handler: %v", err)
 	}
 
 	defer bot.StopLongPolling()
@@ -62,10 +62,10 @@ func main() {
 
 	bh.HandleCallbackQuery(func(bot *telego.Bot, query telego.CallbackQuery) {
 		_, err := bot.SendMessage(tu.Message(tu.ID(query.From.ID), "Type song name you search"))
-		if err == nil {
-			user_states[query.From.ID] = "WaitName"
+		if err != nil {
+			log.Printf("Error")
 		} else {
-			log.Fatal("failed to send message")
+			user_states[query.From.ID] = "WaitName"
 		}
 	}, th.AnyCallbackQueryWithMessage(), th.CallbackDataEqual("searchName"))
 
@@ -85,7 +85,7 @@ func main() {
 	}, th.AnyMessage())
 
 	bh.HandleCallbackQuery(func(bot *telego.Bot, query telego.CallbackQuery) {
-		text := ""
+		text := "The Top10 songs in chart:\n"
 		for i, track := range core.GetTopTracks() {
 			if i == 10 {
 				break
@@ -94,7 +94,7 @@ func main() {
 		}
 		_, err := bot.SendMessage(tu.Message(tu.ID(query.From.ID), text).WithParseMode("HTML").WithLinkPreviewOptions(&telego.LinkPreviewOptions{IsDisabled: true}))
 		if err != nil {
-			log.Fatal("Error")
+			log.Printf("Error")
 		}
 	})
 
